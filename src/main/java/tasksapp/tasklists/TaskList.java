@@ -1,5 +1,6 @@
 package tasksapp.tasklists;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Setter;
 import lombok.Getter;
 import tasksapp.tasks.Task;
@@ -13,7 +14,8 @@ public class TaskList {
 	@Getter @Setter private @Id @GeneratedValue Long id;
 	@Getter @Setter private String name;
 
-	@OneToMany(mappedBy = "taskList", cascade=CascadeType.ALL, orphanRemoval=true)
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	@OneToMany(mappedBy = "taskList", cascade=CascadeType.ALL, orphanRemoval=true, fetch = FetchType.LAZY)
 	@OrderBy(value="taskListPosition")
 	@Getter @Setter private List<Task> tasks = new OrderedTaskList();
 
@@ -27,11 +29,11 @@ public class TaskList {
 //		this.tasks.remove(task);
 //		this.tasks.add(position, task);
 //	}
-//
+
 	public void addTask(Task task) {
 		tasks.add(task);
 	}
-//
+
 //	public boolean removeTask(Task task) {
 //		boolean removedSuccessful = tasks.remove(task);
 //		if (removedSuccessful) {

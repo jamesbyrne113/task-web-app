@@ -10,22 +10,24 @@ import axios from "./axios";
 const stompClient = require('./websocket-listener');
 
 export default function TaskList(props) {
+
     const [tasks, setTasks] = useState([]);
 
     const getTasks = () => {
-        axios.get("/tasks")
-        .then(response => {
-            return promise.all(response.data._embedded.tasks.map(task =>
-                axios.get(task._links.self.href)
-            ));
-        }).then(responses => {
-            setTasks(responses.map(response => {
-                const task = response.data;
-                task.etag = response.headers.etag;
-                return task;
-            }));
-        }).catch(e => {
-            console.log(e);
+        axios.get(props._embedded._links.tasks.href)
+            .then(response => {
+                debugger;
+                return promise.all(response.data._embedded.tasks.map(task =>
+                    axios.get(task._links.self.href)
+                ));
+            }).then(responses => {
+                setTasks(responses.map(response => {
+                    const task = response.data;
+                    task.etag = response.headers.etag;
+                    return task;
+                }));
+            }).catch(e => {
+                console.log(e);
         });
     }
 
@@ -91,7 +93,7 @@ export default function TaskList(props) {
         <Card>
             <List>
                 <List.Header>
-                    <Header as={"h2"} textAlign='center'>To Do</Header>
+                    <Header as={"h2"} textAlign='center'>{props.name}</Header>
                 </List.Header>
                 {listItems}
                 <List.Item>
