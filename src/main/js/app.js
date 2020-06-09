@@ -3,12 +3,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import TaskList from './TaskList';
+import TaskLists from './TaskLists';
 
 function App(props) {
     return (
         <div>
-            <TaskList />
+            <TaskLists />
         </div>
     )
 }
