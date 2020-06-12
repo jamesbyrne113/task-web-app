@@ -25,24 +25,16 @@ public class TaskList {
 		this.name = name;
 	}
 
-//	public void moveTask(Task task, int position) {
-//		this.tasks.remove(task);
-//		this.tasks.add(position, task);
-//	}
-
 	public void addTask(Task task) {
 		tasks.add(task);
 	}
 
-//	public boolean removeTask(Task task) {
-//		boolean removedSuccessful = tasks.remove(task);
-//		if (removedSuccessful) {
-//			task.setTaskList(null);
-//			return true;
-//		}
-//
-//		return false;
-//	}
+	public boolean removeTask(Task task) {
+		boolean removedSuccessful = tasks.remove(task);
+		if (removedSuccessful)
+			return true;
+		return false;
+	}
 
 	@Override
 	public boolean equals(Object o) {

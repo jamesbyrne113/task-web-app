@@ -21,7 +21,7 @@ public class Task {
 	@Getter @Setter private int taskListPosition;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name="task_list_id", nullable=false)
+	@JoinColumn(name="task_list_id")//, nullable=false)
 	@Getter private TaskList taskList;
 
 	public Task() {}
@@ -34,6 +34,8 @@ public class Task {
 	}
 
 	public void setTaskList(TaskList taskList) {
+		if (this.taskList != null)
+			this.taskList.removeTask(this);
 		this.taskList = taskList;
 		taskList.addTask(this);
 	}

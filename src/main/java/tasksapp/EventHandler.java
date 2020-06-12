@@ -1,4 +1,4 @@
-package tasksapp.tasks;
+package tasksapp;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
@@ -8,8 +8,10 @@ import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
 import org.springframework.hateoas.server.EntityLinks;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
+import tasksapp.tasklists.TaskList;
+import tasksapp.tasks.Task;
 
-import static tasksapp.tasks.WebSocketConfiguration.MESSAGE_PREFIX;
+import static tasksapp.WebSocketConfiguration.MESSAGE_PREFIX;
 
 @Component
 @RepositoryEventHandler
@@ -35,7 +37,17 @@ public class EventHandler {
 
 	@HandleAfterSave
 	public void updateTask(Task task) {
-		this.websocket.convertAndSend(MESSAGE_PREFIX + "deleteTask", getPath(task));
+		this.websocket.convertAndSend(MESSAGE_PREFIX + "/updateTask", getPath(task));
+	}
+
+	@HandleAfterCreate
+	public void newTaskList(TaskList taskList) { this.websocket.convertAndSend(MESSAGE_PREFIX + "/newTaskList", getPath(taskList));}
+
+	@HandleAfterDelete
+	public void deleteTaskList(TaskList taskList) { this.websocket.convertAndSend(MESSAGE_PREFIX + "/deleteTaskList", getPath(taskList));}
+
+	public String getPath(TaskList tasklist) {
+		return this.entityLinks.linkForItemResource(tasklist.getClass(), tasklist.getId()).toUri().getPath();
 	}
 
 	public String getPath(Task task) {

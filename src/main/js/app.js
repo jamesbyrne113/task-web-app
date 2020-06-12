@@ -3,12 +3,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import TaskLists from './TaskLists';
+import Board from './board/Board';
 
 function App(props) {
     return (
         <div>
-            <TaskLists />
+            <Board />
         </div>
     )
 }
