@@ -4,25 +4,27 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import tasksapp.tasklists.TaskList;
+import tasksapp.util.OrderedListItem;
 
 import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
-public class Task {
-	@Getter @Setter private @Id @GeneratedValue Long id;
-	@Getter @Setter private boolean complete;
-	@Getter @Setter private String title;
-	@Getter @Setter private String description;
+@Getter @Setter
+public class Task implements OrderedListItem {
+	private @Id @GeneratedValue Long id;
+	private boolean complete;
+	private String title;
+	private String description;
 
-	@Getter @Setter private @Version @JsonIgnore Long version;
+	private @Version @JsonIgnore Long version;
 
 	@Column(name="task_list_position")
-	@Getter @Setter private int taskListPosition;
+	private int listPosition;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name="task_list_id")//, nullable=false)
-	@Getter private TaskList taskList;
+	@JoinColumn(name="task_list_id", nullable=false)
+	private TaskList taskList;
 
 	public Task() {}
 
@@ -46,6 +48,7 @@ public class Task {
 		if (o == null || getClass() != o.getClass()) return false;
 		Task task = (Task) o;
 		return complete == task.complete &&
+				listPosition == task.listPosition &&
 				Objects.equals(id, task.id) &&
 				Objects.equals(title, task.title) &&
 				Objects.equals(description, task.description) &&
@@ -55,7 +58,7 @@ public class Task {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, complete, title, description, version, taskList);
+		return Objects.hash(id, complete, title, description, version, listPosition, taskList);
 	}
 
 	@Override
@@ -66,6 +69,7 @@ public class Task {
 				", title='" + title + '\'' +
 				", description='" + description + '\'' +
 				", version=" + version +
+				", listPosition=" + listPosition +
 				", taskList=" + taskList +
 				'}';
 	}

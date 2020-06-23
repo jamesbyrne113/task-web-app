@@ -1,77 +1,36 @@
 'use strict';
 
 import React, {useEffect, useState} from 'react';
-import {DragDropContext} from 'react-beautiful-dnd';
-import promise from 'promise';
 
 import CreateTaskList from "./CreateTaskList";
 import TaskList from "../tasklist/TaskList";
 import axios from "../axios";
 import {List, Loader} from "semantic-ui-react";
 
+import fetchBoardGenerator from "./fetch-data";
+import DragDropBoard from "./DragDropBoard";
+
 const stompClient = require('../websocket-listener');
 
 
 export default function Board(props) {
+    const {isMobile} = props;
+
+    const [board, setBoard] = useState(null);
     const [taskLists, setTaskLists] = useState([]);
     const [taskListsLinks, setTaskListsLinks] = useState(null);
 
-    const getTasks = taskList => {
-        return axios.get(taskList._links.tasks.href)
-            .then(response => {
-                return promise.all(response.data._embedded.tasks.map(task =>
-                    axios.get(task._links.self.href)
-                ));
-            }).then(responses => {
-                return responses.map(response => {
-                    const task = response.data;
-                    task.etag = response.headers.etag;
-                    return task;
-                });
-            }).catch(e => {
-                console.log(e);
-            });
-    };
-
-    const getTaskLists = () => {
-        axios.get("/taskLists")
-            .then(response => {
-                setTaskListsLinks(response.data._links);
-                return promise.all(response.data._embedded.taskLists.map(taskList =>
-                    axios.get(taskList._links.self.href)
-                ));
-            }).then(responses => {
-            const responseTaskLists = responses.map(response => {
-                const taskList = response.data;
-                taskList.etag = response.headers.etag;
-                taskList.tasks = [];
-                return taskList;
-            });
-            setTaskLists(responseTaskLists);
-            return responseTaskLists;
-        }).then(responseTaskLists => {
-            return promise.all(responseTaskLists.map(taskList => {
-                return getTasks(taskList)
-                    .then(tasks => {
-                        taskList.tasks = tasks;
-                        return taskList;
-                    });
-            }));
-        }).then(taskListsAndTasks => {
-            setTaskLists(taskListsAndTasks);
-        }).catch(e => {
-            console.log(e);
-        });
-    }
+    const fetchBoard = fetchBoardGenerator(setBoard, setTaskLists, setTaskListsLinks);
 
     useEffect(() => {
-        getTaskLists();
+        fetchBoard();
         stompClient.register([
-            {route: '/topic/newTask', callback: getTaskLists},
-            {route: '/topic/updateTask', callback: getTaskLists},
-            {route: '/topic/onDeleteTask', callback: getTaskLists},
-            {route: '/topic/newTaskList', callback: getTaskLists},
-            {route: '/topic/deleteTaskList', callback: getTaskLists}
+            {route: '/topic/newTask', callback: fetchBoard},
+            {route: '/topic/deleteTask', callback: fetchBoard},
+            {route: '/topic/updateTask', callback: fetchBoard},
+            {route: '/topic/newTaskList', callback: fetchBoard},
+            {route: '/topic/deleteTaskList', callback: fetchBoard},
+            {route: '/topic/updateTaskList', callback: fetchBoard}
         ]);
     }, [])
 
@@ -87,16 +46,6 @@ export default function Board(props) {
         })
     }
 
-    const updateTaskListPositions = (taskList, targetTask) => {
-        for (let i = 0; i < taskList.tasks.length; i++) {
-            if (taskList.tasks[i].taskListPosition === i && taskList.tasks[i] !== targetTask)
-                continue;
-
-            taskList.tasks[i].taskListPosition = i;
-            onUpdateTask(taskList.tasks[i]);
-        }
-    }
-
     const onCreateTaskList = (name) => {
         axios.post(
             taskListsLinks.self.href,
@@ -108,57 +57,137 @@ export default function Board(props) {
         });
     }
 
-    const onDragEnd = (result) => {
-        const {destination, source, draggableId} = result;
+    const onUpdateTaskList = (taskList) => {
+        axios.put(
+            taskList._links.self.href,
+            taskList,
+            {
+                'If-Match': taskList.Etag
+            }
+        ).catch(e => {
+            console.log(e);
+        })
+    }
 
-        if (!destination)
-            return;
+    const updateListPositions = (list, updateItem, targetItem) => {
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].taskListPosition === i && list[i] !== targetItem)
+                continue;
 
-        if (destination.droppableId === source.droppableId && destination.index === source.index)
-            return;
-
-        if (destination.droppableId === source.droppableId) {
-            const targetTaskList = taskLists.filter(taskList => taskList._links.self.href === destination.droppableId)[0];
-            const targetTask = targetTaskList.tasks.splice(source.index, 1)[0];
-            targetTaskList.tasks.splice(destination.index, 0, targetTask);
-            updateTaskListPositions(targetTaskList);
-            return;
+            list[i].taskListPosition = i;
+            updateItem(list[i]);
         }
+    }
 
-        const sourceTaskList = taskLists.filter(taskList => taskList._links.self.href === source.droppableId)[0];
-        const destinationTaskList = taskLists.filter(taskList => taskList._links.self.href === destination.droppableId)[0];
+    const getDesktopListItems = () => {
+        return taskLists.map((taskList, index) => {
+            return (
+                <List.Item key={taskList._links.self.href}>
+                    <TaskList
+                        taskList={taskList}
+                        index={index}
+                        onUpdateTask={onUpdateTask}
+                        isMobile={isMobile}
+                        onUpdateTaskList={onUpdateTaskList}
+                        updateListPositions={updateListPositions}
+                    />
+                </List.Item>
+            );
+        });
+    }
 
-        const targetTask = sourceTaskList.tasks.splice(source.index, 1)[0];
-        destinationTaskList.tasks.splice(destination.index, 0, targetTask);
+    const getMobileListItems = () => {
+        return taskLists.map((taskList, index) => {
+            return (
+                <List.Item key={taskList._links.self.href}>
+                    <TaskList
+                        taskList={taskList}
+                        index={index}
+                        onUpdateTask={onUpdateTask}
+                        isMobile={isMobile}
+                        onUpdateTaskList={onUpdateTaskList}
+                        updateListPositions={updateListPositions}
+                    />
+                </List.Item>
+            );
+        });
+    }
 
-        targetTask.taskList = destination.droppableId;
-        axios.delete(targetTask._links.self.href);
-
-        updateTaskListPositions(sourceTaskList, null);
-        updateTaskListPositions(destinationTaskList, targetTask);
-    };
-
-    if (!taskLists) {
-        return (
-            <Loader active inline='centered'/>
-        )
+    if (!board || !board.taskLists) {
+        return <Loader />
     }
 
     return (
-        <DragDropContext
-            onDragEnd={onDragEnd}
-        >
-            <List horizontal>
-                {taskLists.map(taskList => {
-                    return (
-                        <List.Item key={taskList._links.self.href}>
-                            <TaskList taskList={taskList} onUpdateTask={onUpdateTask}/>
-                        </List.Item>
-                    );
-                })}
-                <CreateTaskList onCreateTaskList={onCreateTaskList}/>
-            </List>
-        </DragDropContext>
-    )
+        <div>
+            <CreateTaskList onCreateTaskList={onCreateTaskList}/>
+            <DragDropBoard
+                taskLists={taskLists}
+                onUpdateTask={onUpdateTask}
+                onUpdateTaskList={onUpdateTaskList}
+                updateListPositions={updateListPositions}
+                isMobile={isMobile}
+            >
+                {(isMobile) ? getMobileListItems() : getDesktopListItems()}
+            </DragDropBoard>
+        </div>
+    );
+
+    // return (
+    //     <DragDropContext
+    //         onDragEnd={onDragEnd}
+    //     >
+    //         <Droppable
+    //             droppableId={"taskLists"}
+    //             direction={"horizontal"}
+    //             type="taskList"
+    //         >
+    //             {(provided) =>
+    //                 <div
+    //                     ref={provided.innerRef}
+    //                     {...provided.droppableProps}
+    //                     style={{display: "flex"}}
+    //                 >
+    //                     {<DesktopList
+    //                         provided={provided}
+    //                         taskLists={taskLists}
+    //                         onUpdateTask={onUpdateTask}
+    //                         onUpdateTaskList={onUpdateTaskList}
+    //                         updateListPositions={updateListPositions}
+    //                         isMobile={isMobile}
+    //                     />}
+    //                     <CreateTaskList onCreateTaskList={onCreateTaskList}/>
+    //                 </div>
+    //             }
+    //         </Droppable>
+    //     </DragDropContext>
+    // )
 }
+
+// function MobileList(props) {
+//     const {
+//         taskLists,
+//         onUpdateTask,
+//         updateListPositions,
+//         onUpdateTaskList,
+//         isMobile
+//     } = props;
+//
+//     const accordions = taskLists.map((taskList, index) => {
+//         return {
+//             key: index,
+//             title: { content: taskList.name},
+//             content: { content: <TaskList
+//                     taskList={taskList}
+//                     onUpdateTask={onUpdateTask}
+//                     onUpdateTaskList={onUpdateTaskList}
+//                     updateListPositions={updateListPositions}
+//                     index={index}
+//                     isMobile={isMobile}
+//                 />
+//             }
+//         }
+//     })
+//
+//     return <Accordion defaultActiveIndex={1} panels={accordions} />
+// }
 

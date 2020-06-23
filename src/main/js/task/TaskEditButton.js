@@ -3,12 +3,11 @@ import {Icon} from "semantic-ui-react";
 
 export default function TaskEditButton(props) {
     return (
-        <div className={"ui right floated"}>
+        <div className={"right floated"} style={{margin: "-5px"}} {...props}>
             <Icon
+                fitted
                 size={"large"}
-                name={'edit'}
-                onClick={() => {
-                }}
+                name={"edit"}
             />
         </div>
     );

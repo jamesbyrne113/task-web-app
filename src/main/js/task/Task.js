@@ -7,6 +7,7 @@ import {Card, CardContent} from "semantic-ui-react";
 import TaskCompleteToggle from "./TaskCompleteToggle";
 import TaskDeleteButton from "./TaskDeleteButton";
 import TaskEditButton from "./TaskEditButton";
+import UpdateTask from "./UpdateTask";
 
 export default function Task(props) {
     const { task, onUpdateTask, onDeleteTask, index } = props;
@@ -19,13 +20,13 @@ export default function Task(props) {
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                 >
-                    <Card>
+                    <Card fluid>
                         <CardContent>
                             <div style={{display: "flex", alignItems: "center"}}>
                                 <TaskCompleteToggle task={task} onUpdateTask={onUpdateTask} />
                                 <div style={{flex: 1}}>
                                     <TaskDeleteButton onDeleteTask={onDeleteTask} task={task} />
-                                    <TaskEditButton />
+                                    <UpdateTask task={task} />
                                     <Card.Header>{task.title}</Card.Header>
                                     <Card.Description>{task.description}</Card.Description>
                                 </div>

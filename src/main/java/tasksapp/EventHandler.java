@@ -46,6 +46,9 @@ public class EventHandler {
 	@HandleAfterDelete
 	public void deleteTaskList(TaskList taskList) { this.websocket.convertAndSend(MESSAGE_PREFIX + "/deleteTaskList", getPath(taskList));}
 
+	@HandleAfterSave
+	public void updateTaskList(TaskList taskList) { this.websocket.convertAndSend(MESSAGE_PREFIX + "/updateTaskList", getPath(taskList));}
+
 	public String getPath(TaskList tasklist) {
 		return this.entityLinks.linkForItemResource(tasklist.getClass(), tasklist.getId()).toUri().getPath();
 	}

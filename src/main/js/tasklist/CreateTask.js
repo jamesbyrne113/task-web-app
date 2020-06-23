@@ -17,7 +17,7 @@ export default function CreateTask(props) {
                     disabled={newTaskTitle === ""}
                 >Create</Button>
             }
-            placeholder={"Create New Task"}
+            placeholder={"Create New Task..."}
             value={newTaskTitle}
             onChange={(e) => {setNewTaskTitle(e.target.value)}}
         />

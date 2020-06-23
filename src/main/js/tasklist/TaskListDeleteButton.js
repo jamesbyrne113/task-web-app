@@ -3,8 +3,15 @@
 import React from 'react';
 import { Icon } from 'semantic-ui-react';
 
+const onDeleteTaskList = (taskList) => {
+    axios.delete(taskList._links.self.href)
+        .catch((e) => {
+            console.log(e);
+        });
+}
+
 export default function TaskListDeleteButton(props) {
-    const { taskList, onDeleteTaskList } = props;
+    const { taskList } = props;
 
     return (
         <div className={"ui right floated"}>
